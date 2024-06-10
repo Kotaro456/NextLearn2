@@ -10,6 +10,7 @@ import {
   Revenue,
 } from './definitions';
 import { formatCurrency } from './utils';
+import { notFound } from 'next/navigation';
 
 export async function fetchRevenue() {
   // Add noStore() here to prevent the response from being cached.
