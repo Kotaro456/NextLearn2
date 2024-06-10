@@ -32,12 +32,19 @@ export async function createInvoice(formData: FormData) {
     // 作成日時のための日付を作成する
     const date = new Date().toISOString().split('T')[0];
 
-    // DBの挿入
-    await sql`
-        INSERT INTO invoices (customer_id, amount, status, date)
-        VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-    
-    `;
+
+    // エラーハンドリング
+    try {
+        // DBの挿入
+        await sql`
+            INSERT INTO invoices (customer_id, amount, status, date)
+            VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+        `;
+    } catch (error) {
+        return {
+            message: 'Database Error: Failed to Create Invoice.',
+        }
+    }
 
     // データ更新後に、クライアントサイドルーターキャッシュを更新するために、キャッシュをクリアしてサーバーへの新しいリクエストをトリガーする
     revalidatePath('/dashboard/invoices');
@@ -58,17 +65,28 @@ export async function updateInvoice(id: string, formData: FormData) {
 
     const amountInCents = amount * 100;
 
-    await sql`
+    try {
+        await sql`
         UPDATE invoices
         SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
         WHERE id = ${id}
     `;
 
+    } catch (error) {
+        return { message: 'Database Error: Failed to Update Invoice.' };
+    }
     revalidatePath('/dashboard/invoices');
     redirect('/dashboard/invoices');
 }
 
 export async function deleteInvoice(id: string) {
-    await sql`DELETE FROM invoices WHERE id = ${id}`;
-    revalidatePath('/dashboard/invoices');
+    throw new Error('Failed to Delete Invoice.');
+
+    try {
+        await sql`DELETE FROM invoices WHERE id = ${id}`;
+        revalidatePath('/dashboard/invoices');
+    } catch (error) {
+        return { message: 'Database Error: Failed to Delete Invoice.' };
+    }
+
 }
